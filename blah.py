@@ -167,5 +167,5 @@ for i in range(NUM_BATCHES):
         flow_logits = np.array(flow_logits)
         rgb_logits = np.array(rgb_logits)
 
-        np.save('/dev/shm/generated' + path_batch[j].split('/')[-1] + '_flowlogits.npy', flow_logits)
-        np.save('/dev/shm/generated' + path_batch[j].split('/')[-1] + '_rgblogits.npy', rgb_logits)
+        np.save('/dev/shm/generated/' + path_batch[j].split('/')[-1] + '_flowlogits.npy', flow_logits)
+        np.save('/dev/shm/generated/' + path_batch[j].split('/')[-1] + '_rgblogits.npy', rgb_logits)
