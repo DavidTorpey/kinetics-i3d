@@ -73,4 +73,4 @@ class I3DInferrer(object):
                 [self.flow_logits, self.flow_predictions, self.rgb_logits, self.rgb_predictions],
                 feed_dict=feed_dict)
 
-            print flow_logit.shape, flow_preds.shape, rgb_logit.shape, rgb_preds.shape
+            return flow_logit, flow_preds, rgb_logit, rgb_preds
