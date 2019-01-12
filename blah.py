@@ -102,11 +102,13 @@ def sample_snippets(video, p):
     return snippets[idx[:num_to_sample]]
 
 def compute(f):
+    print f
+
     with open('temp.txt', 'a') as fff:
         fff.write(f + '\n')
 
     video = vid2npy(f).astype('float64')
-    flow = perform_ofb(video)
+    flow = perform_ofa(video)
     return [video, flow]
 
 def get_rgb_and_flow(video, flow):
@@ -142,7 +144,7 @@ for l in train_file:
 
 
 pool = Pool(4)
-BATCH_SIZE = 100
+BATCH_SIZE = 5
 NUM_BATCHES = int(np.ceil(len(paths) / float(BATCH_SIZE)))
 for i in range(NUM_BATCHES):
     path_batch = paths[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]
