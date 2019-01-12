@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo rm -r /var/lib/dpkg/lock*
 sudo apt-get update
 sudo apt-get install -y unrar
 
