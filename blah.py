@@ -96,7 +96,7 @@ def get_rgb_and_flow(f):
     p = 1.0
 
     video = vid2npy(f).astype('float64')
-    flow = perform_ofb(f)
+    flow = perform_ofb(video)
 
     video = np.array([resize(e) for e in video])
     video = rescale(video)
@@ -120,10 +120,14 @@ for l in train_file:
     fn = l.split(' ')[0]
     classidx = int(l.split(' ')[1])
     target = classes[classidx-1]
-    path = '/dev/shm/UCF-101/{}/{}'.format(target, fn)
+    path = '/dev/shm/UCF-101/{}'.format(fn)
+    print path
 
-    rgb, flow = get_rgb_and_flow(path)
+    rgb_snippets, flow_snippets = get_rgb_and_flow(path)
 
-    flow_logit, flow_preds, rgb_logit, rgb_preds = i3d.infer(rgb, flow)
+    for rgb, flow in zip(rgb_snippets, flow_snippets):
+        rgb = np.expand_dims(rgb, axis=0)
+	flow = np.expand_dims(flow, axis=0)
+        flow_logit, flow_preds, rgb_logit, rgb_preds = i3d.infer(rgb, flow)
 
-    print flow_logit.shape, flow_preds.shape
+        print flow_logit.shape, flow_preds.shape, target
