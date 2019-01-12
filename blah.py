@@ -1,3 +1,5 @@
+from multiprocessing import Pool
+
 from compute_i3d import I3DInferrer as I3D
 from cv2 import DualTVL1OpticalFlow_create as DualTVL1
 import cv2
@@ -10,6 +12,7 @@ def resize(im):
     h = r if r <= c else c
     ratio = 256 / float(h)
     return cv2.resize(im, (0, 0), fx=ratio, fy=ratio)
+
 
 def perform_ofa(v):
     v = v.astype('uint8')
@@ -28,6 +31,7 @@ def perform_ofa(v):
         previous_frame = current_frame
 
     return np.array(flows)
+
 
 def perform_ofb(v):
     v = v.astype('uint8')
@@ -48,6 +52,7 @@ def perform_ofb(v):
 
     return np.array(flows)
 
+
 def get_cropped_videos(video):
     _, r, c, _ = video.shape
 
@@ -60,9 +65,11 @@ def get_cropped_videos(video):
             X.append(snippet)
     return np.array(X)
 
+
 def rescale(vol):
     X_std = (vol - vol.min()) / (vol.max() - vol.min())
     return X_std * (1.0 - -1.0) + -1.0
+
 
 def vid2npy(f):
     vid = imageio.get_reader(f, 'ffmpeg')
@@ -71,6 +78,7 @@ def vid2npy(f):
         x.append(frame)
     return np.array(x)
 
+
 def cropped_to_snippets(cropped_vols, p):
     X = []
     for cropped_vol in cropped_vols:
@@ -78,6 +86,7 @@ def cropped_to_snippets(cropped_vols, p):
         for snippet in snippets:
             X.append(snippet)
     return np.array(X)
+
 
 def sample_snippets(video, p):
     WINDOW_LENGTH = 79
@@ -92,11 +101,16 @@ def sample_snippets(video, p):
     num_to_sample = int(np.ceil(p * len(snippets)))
     return snippets[idx[:num_to_sample]]
 
-def get_rgb_and_flow(f):
-    p = 1.0
+def compute(f):
+    with open('temp.txt', 'a') as fff:
+        fff.write(f + '\n')
 
     video = vid2npy(f).astype('float64')
     flow = perform_ofb(video)
+    return [video, flow]
+
+def get_rgb_and_flow(video, flow):
+    p = 1.0
 
     video = np.array([resize(e) for e in video])
     video = rescale(video)
@@ -111,23 +125,45 @@ def get_rgb_and_flow(f):
 
     return RGB, FLOW
 
+
 i3d = I3D('/dev/shm/ucf101_I3D/rgb/train1/model.ckpt-5000', '/dev/shm/ucf101_I3D/flow/train1/model.ckpt-5000')
 
 classes = open('classes.txt').read().splitlines()
-
 train_file = open('/dev/shm/ucfTrainTestlist/trainlist01.txt').read().splitlines()
+paths = []
+y = []
 for l in train_file:
     fn = l.split(' ')[0]
     classidx = int(l.split(' ')[1])
-    target = classes[classidx-1]
+    target = classes[classidx - 1]
     path = '/dev/shm/UCF-101/{}'.format(fn)
-    print path
+    paths.append(path)
+    y.append(target)
 
-    rgb_snippets, flow_snippets = get_rgb_and_flow(path)
 
-    for rgb, flow in zip(rgb_snippets, flow_snippets):
-        rgb = np.expand_dims(rgb, axis=0)
-	flow = np.expand_dims(flow, axis=0)
-        flow_logit, flow_preds, rgb_logit, rgb_preds = i3d.infer(rgb, flow)
+pool = Pool(4)
+BATCH_SIZE = 100
+NUM_BATCHES = int(np.ceil(len(paths) / float(BATCH_SIZE)))
+for i in range(NUM_BATCHES):
+    path_batch = paths[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]
+    l = pool.map(compute, path_batch)
 
-        print flow_logit.shape, flow_preds.shape, target
+    for j, (e, target) in enumerate(zip(l, y)):
+        e1 = e[0]
+        e2 = e[1]
+        rgb_snippets, flow_snippets = get_rgb_and_flow(e1, e2)
+
+        flow_logits = []
+        rgb_logits = []
+        for rgb, flow in zip(rgb_snippets, flow_snippets):
+            rgb = np.expand_dims(rgb, axis=0)
+            flow = np.expand_dims(flow, axis=0)
+            flow_logit, _, rgb_logit, _ = i3d.infer(rgb, flow)
+
+            flow_logits.append(flow_logit)
+            rgb_logits.append(rgb_logit)
+        flow_logits = np.array(flow_logits)
+        rgb_logits = np.array(rgb_logits)
+
+        np.save('/dev/shm/generated' + path_batch[j].split('/')[-1] + '_flowlogits.npy', flow_logits)
+        np.save('/dev/shm/generated' + path_batch[j].split('/')[-1] + '_rgblogits.npy', rgb_logits)
