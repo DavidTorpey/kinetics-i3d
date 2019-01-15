@@ -55,14 +55,13 @@ def vid2npy(f):
     return np.array(x)
 
 fp = sys.argv[1]
-print 'loading video'
+print('loading video')
 video = vid2npy(fp).astype('float64')
-print 'performing flow'
+print('performing flow')
 flow = np.load('fullflow.npy')
 
 #RGB POSTPROCESSING
 video = np.array([resize(e) for e in video])
-print 'resize video', video.shape
 X_std = (video - video.min()) / (video.max() - video.min())
 video = X_std * (1.0 - -1.0) + -1.0
 _, r, c, _ = video.shape
@@ -71,12 +70,10 @@ cx = c / 2.0
 x = int(cx-112)
 y = int(cy-112)
 centre_crop_rgb = video[:, y:y+224, x:x+224, :]
-print centre_crop_rgb.shape
+print(centre_crop_rgb.shape)
 
 
-print 'flow before postproc', flow.shape
 flow = np.array([resize(e) for e in flow])
-print 'resize flow', flow.shape
 flow = np.clip(flow, -20, 20)
 X_std = (flow - flow.min()) / (flow.max() - flow.min())
 flow = X_std * (1.0 - -1.0) + -1.0
@@ -86,7 +83,7 @@ cx = c / 2.0
 x = int(cx-112)
 y = int(cy-112)
 centre_crop_flow = flow[:, y:y+224, x:x+224, :]
-print centre_crop_flow.shape
+print(centre_crop_flow.shape)
 
 centre_crop_rgb = np.expand_dims(centre_crop_rgb, axis=0)
 centre_crop_flow = np.expand_dims(centre_crop_flow, axis=0)

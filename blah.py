@@ -102,7 +102,7 @@ def sample_snippets(video, p):
     return snippets[idx[:num_to_sample]]
 
 def compute(f):
-    print f
+    print(f)
 
     with open('temp.txt', 'a') as fff:
         fff.write(f + '\n')
