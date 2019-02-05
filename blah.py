@@ -128,17 +128,17 @@ def get_rgb_and_flow(video, flow):
     return RGB, FLOW
 
 
-i3d = I3D('/home/celik/david/ucf101_I3D/rgb/train1/model.ckpt-5000', '/home/celik/david/ucf101_I3D/flow/train1/model.ckpt-5000')
+i3d = I3D('/home/wits-user/david/data/ucf101/ucf101_I3D/rgb/train1/model.ckpt-5000', '/home/wits-user/david/data/ucf101/ucf101_I3D/flow/train1/model.ckpt-5000')
 
 classes = open('classes.txt').read().splitlines()
-train_file = open('/home/celik/david/ucfTrainTestlist/trainlist01.txt').read().splitlines()
+train_file = open('/home/wits-user/david/data/ucf101/ucfTrainTestlist/trainlist01.txt').read().splitlines()
 paths = []
 y = []
 for l in train_file:
     fn = l.split(' ')[0]
     classidx = int(l.split(' ')[1])
     target = classes[classidx - 1]
-    path = '/home/celik/david/UCF-101/{}'.format(fn)
+    path = '/home/wits-user/david/data/ucf101/UCF-101/{}'.format(fn)
     paths.append(path)
     y.append(target)
 
@@ -167,5 +167,5 @@ for i in range(NUM_BATCHES):
         flow_logits = np.array(flow_logits)
         rgb_logits = np.array(rgb_logits)
 
-        np.save('/home/celik/david/generated/' + path_batch[j].split('/')[-1] + '_flowlogits.npy', flow_logits)
-        np.save('/home/celik/david/generated/' + path_batch[j].split('/')[-1] + '_rgblogits.npy', rgb_logits)
+        np.save('/home/wits-user/david/data/ucf101/generated/' + path_batch[j].split('/')[-1] + '_flowlogits.npy', flow_logits)
+        np.save('/home/wits-user/david/data/ucf101/generated/' + path_batch[j].split('/')[-1] + '_rgblogits.npy', rgb_logits)
